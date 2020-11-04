@@ -94,6 +94,10 @@ func (b *Board) hasEmptyCells() bool {
 
 // 移动，j-左移，l-右移，i-上移，k-下移
 func (b *Board) Move(dir string) {
+	var grids = make([][]int, b.Size)
+	for i := 0; i < b.Size; i++ {
+		grids[i] = append(grids[i], b.Grids[i]...)
+	}
 	switch dir {
 	case "j":
 		b.MoveLeft()
@@ -104,8 +108,12 @@ func (b *Board) Move(dir string) {
 	case "k":
 		b.MoveDown()
 	}
-	// 重新添加一个随机值
-	b.fillRandomData()
+
+	// 如果移动完没有变化，则不添加随机值
+	if b.different(grids) {
+		// 重新添加一个随机值
+		b.fillRandomData()
+	}
 	// 打印棋盘
 	b.PrettyPrintBoard()
 }
@@ -123,6 +131,18 @@ func (b *Board) PrettyPrintBoard() {
 		fmt.Println("")
 	}
 	fmt.Println("")
+}
+
+// 判断是否发生改变
+func (b *Board) different(grids [][]int) bool {
+	for i := 0; i < b.Size; i++ {
+		for j := 0; j < b.Size; j++ {
+			if grids[i][j] != b.Grids[i][j] {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (b *Board) exchange(list [][]int) [][]int {
