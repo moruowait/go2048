@@ -92,32 +92,6 @@ func (b *Board) hasEmptyCells() bool {
 	return len(b.emptyCells()) != 0
 }
 
-// 移动，j-左移，l-右移，i-上移，k-下移
-func (b *Board) Move(dir string) {
-	var grids = make([][]int, b.Size)
-	for i := 0; i < b.Size; i++ {
-		grids[i] = append(grids[i], b.Grids[i]...)
-	}
-	switch dir {
-	case "j":
-		b.MoveLeft()
-	case "l":
-		b.MoveRight()
-	case "i":
-		b.MoveUp()
-	case "k":
-		b.MoveDown()
-	}
-
-	// 如果移动完没有变化，则不添加随机值
-	if b.different(grids) {
-		// 重新添加一个随机值
-		b.fillRandomData()
-	}
-	// 打印棋盘
-	b.PrettyPrintBoard()
-}
-
 // 打印棋盘
 func (b *Board) PrettyPrintBoard() {
 	for _, rowGrids := range b.Grids {
@@ -145,129 +119,58 @@ func (b *Board) different(grids [][]int) bool {
 	return false
 }
 
-func (b *Board) exchange(list [][]int) [][]int {
+// 移动，j-左移，l-右移，i-上移，k-下移
+func (b *Board) Move(dir string) {
+	// 记录原有棋盘
+	var grids = make([][]int, b.Size)
 	for i := 0; i < b.Size; i++ {
-		for j := i; j < b.Size; j++ {
-			list[i][j], list[j][i] = list[j][i], list[i][j]
-		}
+		grids[i] = append(grids[i], b.Grids[i]...)
 	}
-	return list
-}
-
-func (b *Board) exchangeRow(list [][]int) [][]int {
-	for row := 0; row < len(list)/2; row++ {
-		list[row], list[b.Size-row-1] = list[b.Size-row-1], list[row]
-	}
-	return list
-}
-
-func (b *Board) exchangeColumn(list [][]int) [][]int {
-	for row := 0; row < len(list); row++ {
-		for i := 0; i < len(list[row])-1; i += 2 {
-			list[row][i], list[row][b.Size-i-1] = list[row][b.Size-i-1], list[row][i]
-		}
-	}
-	return list
-}
-
-func (b *Board) MoveLeft() {
-	fmt.Println("左移")
-	var list = make([][]int, b.Size, b.Size)
-	for row, rowGrids := range b.Grids {
-		for _, grid := range rowGrids {
-			list[row] = append(list[row], grid)
-		}
-	}
-	list = b.moveClose(list)
-	list = b.Combine(list)
-	list = b.moveClose(list)
-
-	// 还原
-	for i, l := range list {
-		for j, v := range l {
-			b.Grids[i][j] = v
-		}
-	}
-}
-
-func (b *Board) MoveRight() {
-	fmt.Println("右移")
-	var list = make([][]int, b.Size, b.Size)
-	for row, rowGrids := range b.Grids {
-		for j := b.Size - 1; j >= 0; j-- {
-			list[row] = append(list[row], rowGrids[j])
-		}
-	}
-	list = b.moveClose(list)
-	list = b.Combine(list)
-	list = b.moveClose(list)
-
-	// 还原
-	for i, l := range list {
-		for j := b.Size - 1; j >= 0; j-- {
-			b.Grids[i][b.Size-j-1] = l[j]
-		}
-	}
-}
-
-func (b *Board) MoveUp() {
-	fmt.Println("上移")
 
 	var list = make([][]int, b.Size, b.Size)
-	for row, rowGrids := range b.Grids {
-		for _, grid := range rowGrids {
-			list[row] = append(list[row], grid)
-		}
-	}
-	// 交换
-	list = b.exchange(list)
-	// 交换行
-	list = b.exchangeRow(list)
-
-	list = b.moveClose(list)
-	list = b.Combine(list)
-	list = b.moveClose(list)
-
-	// 交换行
-	list = b.exchangeRow(list)
-	// 交换
-	list = b.exchange(list)
-
-	// 还原
 	for i := 0; i < b.Size; i++ {
 		for j := 0; j < b.Size; j++ {
-			b.Grids[i][j] = list[i][j]
+			switch dir {
+			case "j": // 左移
+				list[i] = append(list[i], b.Grids[i][j])
+			case "l": // 右移
+				list[i] = append(list[i], b.Grids[i][b.Size-j-1])
+			case "i": // 上移
+				list[j] = append(list[j], b.Grids[i][j])
+			case "k": // 下移
+				list[j] = append(list[j], b.Grids[i][b.Size-j-1])
+			}
 		}
 	}
-}
-
-func (b *Board) MoveDown() {
-	fmt.Println("下移")
-
-	var list = make([][]int, b.Size, b.Size)
-	for row, rowGrids := range b.Grids {
-		for _, grid := range rowGrids {
-			list[row] = append(list[row], grid)
-		}
-	}
-
-	// 交换行
-	list = b.exchange(list)
-	list = b.exchangeColumn(list)
 
 	list = b.moveClose(list)
 	list = b.Combine(list)
 	list = b.moveClose(list)
 
-	// 交换行
-	list = b.exchangeColumn(list)
-	list = b.exchange(list)
-	// 还原
 	for i := 0; i < b.Size; i++ {
 		for j := 0; j < b.Size; j++ {
-			b.Grids[i][j] = list[i][j]
+			switch dir {
+			case "j": // 左移
+				b.Grids[i][j] = list[i][j]
+			case "l": // 右移
+				b.Grids[i][b.Size-j-1] = list[i][j]
+			case "i": // 上移
+				b.Grids[i][j] = list[j][i]
+			case "k": // 下移
+				b.Grids[i][b.Size-j-1] = list[j][i]
+			}
 		}
 	}
+
+	// 如果移动完没有变化，则不添加随机值
+	if b.different(grids) {
+		// 重新添加一个随机值
+		b.fillRandomData()
+	}
+	// 打印棋盘
+	b.PrettyPrintBoard()
+
+	return
 }
 
 func (b *Board) Combine(list [][]int) [][]int {
